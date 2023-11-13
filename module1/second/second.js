@@ -1,3 +1,3 @@
 'use strict';
 let name = prompt('Type your name');
-console.log(`Hello, ${name}`);
+document.getElementById('text').innerHTML = name

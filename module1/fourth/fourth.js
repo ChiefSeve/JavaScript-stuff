@@ -3,9 +3,9 @@
 
     let min = Math.ceil(1);
     let max = Math.floor(4);
-    let random_number = Math.floor(Math.random() * (max - min + 1) + min);
-    let name = prompt('name: ')
-    switch (random_number){
+    let randomNumber = Math.floor(Math.random() * (max - min + 1) + min);
+    let name = prompt('name')
+    switch (randomNumber){
         case 1 :
             document.getElementById('text').innerHTML `${name}, you are Gryffindor`;
             break;
