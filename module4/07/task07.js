@@ -4,6 +4,11 @@
 // route points are in Google polyline encoded format, so you need to add support for Leafletiin:
 // https://github.com/jieter/Leaflet.encoded
 
+let mapDiv = document.getElementById('map');
+let travelTimeDiv = document.getElementById('travelTime');
+mapDiv.innerHTML='';
+mapDiv.style.width='100%',
+mapDiv.style.height='400px';
 
 // show the map
 const map = L.map('map').setView([60.1785553, 24.8786212], 13);
@@ -14,7 +19,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const apiAddress = 'https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql'; // cors issues may arise, use proxy or browser plugin if necessary
 
 // fetch route with origin and target
-function getRoute(origin, target) {
+async function getRoute(origin, target) {
     // GraphQL query
     const GQLQuery = `{
   plan( 
@@ -49,7 +54,14 @@ function getRoute(origin, target) {
     fetch(apiAddress, fetchOptions).then(function (response) {
         return response.json();
     }).then(function (result) {
-        console.log(result.data.plan.itineraries[0].legs);
+        console.log(result.data.plan.itineraries[0].legs[0].startTime);
+        let startTime = document.createElement('p');
+        let endTime = document.createElement('p');
+        const path = result.data.plan.itineraries[0].legs
+        startTime.innerText = path[0].startTime;
+        endTime.innerText = path[path.length-1].endTime;
+        travelTimeDiv.appendChild(startTime)
+        travelTimeDiv.appendChild(endTime)
         const googleEncodedRoute = result.data.plan.itineraries[0].legs;
         for (let i = 0; i < googleEncodedRoute.length; i++) {
             let color = '';
@@ -85,16 +97,16 @@ function getRoute(origin, target) {
 
 async function addressSearch(address,callback) {
     //validate and preprocess url
-    const _queryUrl = `http://api.digitransit.fi/geocoding/v1/search?text=${address}&size=1&digitransit-subscription-key=0d5edce6870a427881c6b151a74ccb14`;
+    const _queryUrl = `http://api.digitransit.fi/geocoding/v1/search?text=${address}&size=1`;
     const _headers = {
         'Content-Type': 'application/json',
+        'digitransit-subscription-key': '0d5edce6870a427881c6b151a74ccb14',
     };
     fetch(_queryUrl, {
         method: 'GET',
         headers: _headers
     }).then(response => response.json()).then(json => {
         if (json !== '') {
-            console.log(json.features[0].geometry.coordinates)
             callback(null, json)
         } else {
             callback(json, null)
@@ -105,7 +117,23 @@ async function addressSearch(address,callback) {
 }
 
 // get route from origin to target
-addressSearch('kamppi', (data, array) => {
-    console.log(array[0], 'foobar')
-});
-getRoute({latitude: 60.24, longitude: 24.74}, {latitude: 60.16, longitude: 24.92})
+
+const addressQuery = document.querySelector('#addressForm');
+
+
+addressQuery.addEventListener('submit', async function(evt) {
+    evt.preventDefault();
+
+    let query = document.querySelector('input[name=q]').value;
+    let result = document.getElementById('result');
+    try{
+
+        addressSearch(query, (data, array) => {
+            getRoute({latitude: array.features[0].geometry.coordinates[1], longitude: array.features[0].geometry.coordinates[0]}, {latitude: 60.223876, longitude: 24.758061})
+        });
+
+    } catch (error) {
+        console.log(error)
+    }
+
+})
