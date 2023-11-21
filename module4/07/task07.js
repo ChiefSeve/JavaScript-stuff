@@ -4,11 +4,6 @@
 // route points are in Google polyline encoded format, so you need to add support for Leafletiin:
 // https://github.com/jieter/Leaflet.encoded
 
-let mapDiv = document.getElementById('map');
-let travelTimeDiv = document.getElementById('travelTime');
-mapDiv.innerHTML='';
-mapDiv.style.width='100%',
-mapDiv.style.height='400px';
 
 // show the map
 const map = L.map('map').setView([60.1785553, 24.8786212], 13);
@@ -17,6 +12,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 const apiAddress = 'https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql'; // cors issues may arise, use proxy or browser plugin if necessary
+
 
 // fetch route with origin and target
 async function getRoute(origin, target) {
@@ -46,22 +42,25 @@ async function getRoute(origin, target) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'digitransit-subscription-key': ' 0d5edce6870a427881c6b151a74ccb14 ',
+            'digitransit-subscription-key': ' API KEY HERE ',
         },
         body: JSON.stringify({query: GQLQuery}),
     };
 
-    fetch(apiAddress, fetchOptions).then(function (response) {
+    fetch(apiAddress, fetchOptions).then(async function (response) {
         return response.json();
     }).then(function (result) {
-        console.log(result.data.plan.itineraries[0].legs[0].startTime);
+        let travelTimeDiv = document.getElementById('travelTime');
+        console.log(result.data.plan.itineraries[0]);
         let startTime = document.createElement('p');
         let endTime = document.createElement('p');
         const path = result.data.plan.itineraries[0].legs
-        startTime.innerText = path[0].startTime;
-        endTime.innerText = path[path.length-1].endTime;
-        travelTimeDiv.appendChild(startTime)
-        travelTimeDiv.appendChild(endTime)
+        const startDate=new Date(path[0].startTime * 1000);
+        const endDate=new Date(path[path.length-1].endTime * 1000);
+        startTime.innerText = startDate.toString();
+        endTime.innerText = endDate.toString();
+        travelTimeDiv.appendChild(startTime);
+        travelTimeDiv.appendChild(endTime);
         const googleEncodedRoute = result.data.plan.itineraries[0].legs;
         for (let i = 0; i < googleEncodedRoute.length; i++) {
             let color = '';
@@ -100,7 +99,7 @@ async function addressSearch(address,callback) {
     const _queryUrl = `http://api.digitransit.fi/geocoding/v1/search?text=${address}&size=1`;
     const _headers = {
         'Content-Type': 'application/json',
-        'digitransit-subscription-key': '0d5edce6870a427881c6b151a74ccb14',
+        'digitransit-subscription-key': 'API KEY HERE',
     };
     fetch(_queryUrl, {
         method: 'GET',
@@ -123,13 +122,18 @@ const addressQuery = document.querySelector('#addressForm');
 
 addressQuery.addEventListener('submit', async function(evt) {
     evt.preventDefault();
-
+    let mapDiv = document.getElementById('map');
+    mapDiv.style.width='100%';
+    mapDiv.style.height='400px';
     let query = document.querySelector('input[name=q]').value;
     let result = document.getElementById('result');
     try{
 
-        addressSearch(query, (data, array) => {
-            getRoute({latitude: array.features[0].geometry.coordinates[1], longitude: array.features[0].geometry.coordinates[0]}, {latitude: 60.223876, longitude: 24.758061})
+        await addressSearch(query, (data, array) => {
+            getRoute({
+                latitude: array.features[0].geometry.coordinates[1],
+                longitude: array.features[0].geometry.coordinates[0]
+            }, {latitude: 60.223876, longitude: 24.758061})
         });
 
     } catch (error) {
