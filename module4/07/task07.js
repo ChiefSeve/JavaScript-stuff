@@ -111,7 +111,7 @@ async function addressSearch(address,callback) {
             callback(json, null)
         }
     }).catch(err => {
-        callback('NO_SUBSCRIPTIONS', null)
+        callback(err)
     })
 }
 
@@ -126,7 +126,6 @@ addressQuery.addEventListener('submit', async function(evt) {
     mapDiv.style.width='100%';
     mapDiv.style.height='400px';
     let query = document.querySelector('input[name=q]').value;
-    let result = document.getElementById('result');
     try{
 
         await addressSearch(query, (data, array) => {
